@@ -1,20 +1,24 @@
 """
-# TODO: docs
+Utilities for ploting uplift related charts.
 """
-from typing import Tuple, Dict
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
-import scipy.stats
 import seaborn as sns
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.metrics import auc
-from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils.validation import check_consistent_length
 
-def cumulative_gain_plot(indices: np.ndarray,
-                         curve_values: np.ndarray,
+import metrics
+import utils
+
+
+def cumulative_gain_plot(y_true: np.ndarray,
+                         uplift: np.ndarray,
+                         treatment: np.ndarray,
+                         weights: np.ndarray = None,
                          model_name: str = 'Uplift Model',
                          figsize: Tuple[int, int] = (10,6)
                         ) -> plt.Figure:
@@ -26,6 +30,9 @@ def cumulative_gain_plot(indices: np.ndarray,
     
     :returns: cgc plot
     """
+    indices, curve_values = metrics.cumulative_gain_curve(
+        y_true, uplift, treatment, weights
+    )
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     ax.plot(indices, curve_values, label=f'{model_name}, auc: {round(auc(indices, curve_values), 4)}')
@@ -40,7 +47,6 @@ def cumulative_gain_plot(indices: np.ndarray,
 def target_plot(y_true: np.ndarray,
                 uplift: np.ndarray,
                 treatment: np.ndarray,
-                weights: np.ndarray = None,
                 bins: int = 10,
                 figsize: Tuple[int, int] = (10,6)
                ) -> plt.Figure:
@@ -53,15 +59,12 @@ def target_plot(y_true: np.ndarray,
     
     :returns: target plot
     """
-    if weights is None:
-        weights = np.ones_like(y_true)
-    y_true, uplift, treatment, weights = np.array(y_true), np.array(uplift),\
-                                        np.array(treatment), np.array(weights)
-    check_consistent_length(y_true, uplift, treatment, weights)
-    _check_is_binary(treatment)
+    y_true, uplift, treatment= np.array(y_true), np.array(uplift), np.array(treatment)
+    check_consistent_length(y_true, uplift, treatment)
+    utils.check_is_binary(treatment)
     
     results = pd.DataFrame({
-        'y_true_weight': y_true + weights*1j,
+        'y_true': y_true,
         'uplift': uplift,
         'treatment': treatment
     })
@@ -70,23 +73,20 @@ def target_plot(y_true: np.ndarray,
         1: 'treatment',
         0: 'control'
     })
-    def _weighted_mean(x, **kws):
-        #https://github.com/mwaskom/seaborn/issues/722
-        return np.sum(np.real(x) * np.imag(x)) / np.sum(np.imag(x))
     plt.figure(figsize=figsize)
     fig = sns.barplot(x='quantile',
-                      y='y_true_weight',
+                      y='y_true',
                       hue='treatment',
-                      ci=False,
-                      estimator=_weighted_mean,
+                      errorbar=('ci', False),
+                      estimator=np.mean,
                       data=results
                      )
-    fig.axhline(_weighted_mean(results[results['treatment']=='treatment']['y_true_weight']),
+    fig.axhline(np.mean(results[results['treatment']=='treatment']['y_true']),
                 linestyle='--',
                 color='k',
                 alpha=0.5,
                 label='treatment avg')
-    fig.axhline(_weighted_mean(results[results['treatment']=='control']['y_true_weight']),
+    fig.axhline(np.mean(results[results['treatment']=='control']['y_true']),
                 linestyle='--',
                 color='r',
                 alpha=0.5,
@@ -120,7 +120,7 @@ def true_lift_plot(y_true: np.ndarray,
     y_true, uplift, treatment, weights = np.array(y_true), np.array(uplift),\
                                         np.array(treatment), np.array(weights)
     check_consistent_length(y_true, uplift, treatment, weights)
-    _check_is_binary(treatment)
+    utils.check_is_binary(treatment)
     
     results = pd.DataFrame({
         'y_true_weight': y_true * weights,
@@ -163,7 +163,7 @@ def calibration_plot(y_true: np.ndarray,
     y_true, uplift, treatment, weights = np.array(y_true), np.array(uplift),\
                                         np.array(treatment), np.array(weights)
     check_consistent_length(y_true, uplift, treatment, weights)
-    _check_is_binary(treatment)
+    utils.check_is_binary(treatment)
     valid_bin_types = ['quantile', 'uniform']
     assert bin_type in valid_bin_types, f'Invalid bin_type, must be one of {valid_bin_types}'
     

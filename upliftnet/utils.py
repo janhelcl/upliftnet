@@ -1,5 +1,5 @@
 """
-# TODO: docs
+Utilities for data validation
 """
 import numpy as np
 

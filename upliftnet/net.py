@@ -3,18 +3,12 @@
 """
 from typing import Tuple
 
-import numpy as np
-import pandas as pd
-import scipy.stats
-import seaborn as sns
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from sklearn.metrics import auc
-from sklearn.utils.extmath import stable_cumsum
-from sklearn.utils.validation import check_consistent_length
+
+import metrics
 
 
-class UplitRankNet(tf.keras.Model):
+class UplitNet(tf.keras.Model):
     """
     Custom model implementing LambdaRANK algorithm with PCG as the optimized metric
     
@@ -124,8 +118,9 @@ class AveragePromotionalCumulativeGain(tf.keras.metrics.Metric):
         """
         y = tf.squeeze(y)
         uplift = tf.squeeze(uplift)
-        sample_weight = tf.squeeze(sample_weight)
-        self.gains.assign_add(pcg_tf_metric(y, uplift, sample_weight))
+        if sample_weight is not None:
+            sample_weight = tf.squeeze(sample_weight)
+        self.gains.assign_add(metrics.pcg_tf_metric(y, uplift, sample_weight))
         self.counter.assign_add(1)
 
     def result(self):
@@ -174,21 +169,6 @@ class ApproxPCGLoss(tf.keras.losses.Loss):
         pcg = tf.reduce_sum(y * promotions)
         return -pcg
 
-# @tf.function
-# def _flip_and_scale(y_true: tf.Tensor, treatment: tf.Tensor) -> tf.Tensor:
-#     """
-#     Prepares target for uplift ranking
-    
-#     :param y_true: label, typically response idicator or revenue
-#     :param treatment: binary treatment indicator, 1 stands for treatment, 0 for control
-    
-#     :returns: transformed target
-#     """
-#     return tf.where(tf.cast(treatment, tf.bool),
-#                     tf.divide(y_true, tf.reduce_sum(treatment)),
-#                     tf.negative(tf.divide(y_true, tf.reduce_sum(tf.negative(treatment-1))))
-#                    )
-
 @tf.function
 def _flip_and_scale(y_true: tf.Tensor, treatment: tf.Tensor) -> tf.Tensor:
     """
@@ -200,6 +180,6 @@ def _flip_and_scale(y_true: tf.Tensor, treatment: tf.Tensor) -> tf.Tensor:
     :returns: transformed target
     """
     return tf.where(tf.cast(treatment, tf.bool),
-                    y_true,
-                    -y_true
+                    tf.divide(y_true, tf.reduce_sum(treatment)),
+                    tf.negative(tf.divide(y_true, tf.reduce_sum(tf.negative(treatment-1))))
                    )

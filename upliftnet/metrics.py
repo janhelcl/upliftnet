@@ -1,17 +1,15 @@
 """
-# TODO: docs
+Collection of uplift related metrics
 """
 from typing import Tuple
 
 import numpy as np
-import pandas as pd
-import scipy.stats
-import seaborn as sns
-import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.metrics import auc
 from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils.validation import check_consistent_length
+
+import utils
 
 
 def cumulative_gain_curve(y_true: np.ndarray,
@@ -39,7 +37,7 @@ def cumulative_gain_curve(y_true: np.ndarray,
     y_true, uplift, treatment, weights = np.array(y_true), np.array(uplift),\
                                         np.array(treatment), np.array(weights)
     check_consistent_length(y_true, uplift, treatment, weights)
-    _check_is_binary(treatment)
+    utils.check_is_binary(treatment)
     
     desc_score_indices = np.argsort(uplift)[::-1]
     y_true, uplift, treatment, weights = y_true[desc_score_indices], uplift[desc_score_indices],\
@@ -83,27 +81,6 @@ def cgc_auc(y_true: np.ndarray,
     :returns: cgc auc
     """
     return auc(*cumulative_gain_curve(y_true, uplift, treatment, weights))
-
-
-def pcg_xgb_metric(preds: np.ndarray, 
-                   dtrain: 'xgboost.DMatrix'
-                  ) -> Tuple[str, float]:
-    """
-    Promotional Cumulative Gain metric for xgb early stopping
-    
-    NOTE: xgb early stopping assumes minimization of a loss,
-    here we want to maximize this quantity therefore the
-    negative of pcg is returned
-    
-    :param preds: predictions of xgb model
-    :param dtrain: DMatrix with properly transformed label
-    
-    :returns: 'pcg', -pcg
-    """
-    labels = dtrain.get_label()
-    ranks = scipy.stats.rankdata(-preds, method='ordinal')
-    n = len(labels)
-    return 'pcg', -(labels*(n-ranks+1)).sum()
 
 
 @tf.function
