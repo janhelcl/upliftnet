@@ -9,7 +9,7 @@ from sklearn.metrics import auc
 from sklearn.utils.extmath import stable_cumsum
 from sklearn.utils.validation import check_consistent_length
 
-import utils
+from upliftnet import utils
 
 
 def cumulative_gain_curve(y_true: np.ndarray,

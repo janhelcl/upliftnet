@@ -11,8 +11,8 @@ import tensorflow as tf
 from sklearn.metrics import auc
 from sklearn.utils.validation import check_consistent_length
 
-import metrics
-import utils
+from upliftnet import metrics
+from upliftnet import utils
 
 
 def cumulative_gain_plot(y_true: np.ndarray,

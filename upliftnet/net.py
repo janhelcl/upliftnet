@@ -5,7 +5,7 @@ from typing import Tuple
 
 import tensorflow as tf
 
-import metrics
+from upliftnet import metrics
 
 
 class UpliftNet(tf.keras.Model):

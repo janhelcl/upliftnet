@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[project]
+name = "upliftnet"
+version = "0.0.4"
+authors = [
+  { name="Jan Helcl", email="janhelcl@gmail.com" },
+]
+description = "Causal loss and metric for neural networks"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/janhelcl/upliftnet"
+Issues = "https://github.com/janhelcl/upliftnet/issues"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
