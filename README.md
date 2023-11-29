@@ -1,5 +1,5 @@
 # Installation
 
 ```sh
-pip install tf2xgb
+pip install upliftnet
 ```
