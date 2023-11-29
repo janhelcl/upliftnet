@@ -8,8 +8,16 @@ import tensorflow as tf
 import metrics
 
 
-class UplitNet(tf.keras.Model):
+class UpliftNet(tf.keras.Model):
     """
+    Custom keras model optimizing Promotional Cumulative Gain Loss via LambdaLoss
+    
+    This class can be used the same way as its superclass `tf.keras.Model` with both "Functional API" or
+    by subclassing (see: https://www.tensorflow.org/api_docs/python/tf/keras/Model). There are few limitations
+    however:
+        - the output layer is assumed to be `tf.keras.layers.Dense(1, activation='linear')`
+        - the data is required to be in a specific format, param `x` must be `tf.data.Dataset((X, y_true, treatment))`
+            of `tf.data.Dataset((X, y_true, treatment, sample_weights))`
     """        
     def train_step(self, batch: Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]):
         """        
